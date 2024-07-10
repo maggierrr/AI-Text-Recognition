@@ -53,10 +53,12 @@ class Preprocessor:
         res_gt_texts = []
         for i in range(batch.batch_size):
             # number of words to put into current line
-            num_words = random.randint(1, 8) if self.data_augmentation else default_num_words
+            num_words = random.randint(
+                1, 8) if self.data_augmentation else default_num_words
 
             # concat ground truth texts
-            curr_gt = ' '.join([batch.gt_texts[(i + j) % batch.batch_size] for j in range(num_words)])
+            curr_gt = ' '.join(
+                [batch.gt_texts[(i + j) % batch.batch_size] for j in range(num_words)])
             res_gt_texts.append(curr_gt)
 
             # put selected word images into list, compute target image size
@@ -66,7 +68,8 @@ class Preprocessor:
             w = 0
             for j in range(num_words):
                 curr_sel_img = batch.imgs[(i + j) % batch.batch_size]
-                curr_word_sep = random.randint(20, 50) if self.data_augmentation else default_word_sep
+                curr_word_sep = random.randint(
+                    20, 50) if self.data_augmentation else default_word_sep
                 h = max(h, curr_sel_img.shape[0])
                 w += curr_sel_img.shape[1]
                 sel_imgs.append(curr_sel_img)
@@ -80,7 +83,8 @@ class Preprocessor:
             for curr_sel_img, curr_word_sep in zip(sel_imgs, word_seps):
                 x += curr_word_sep
                 y = (h - curr_sel_img.shape[0]) // 2
-                target[y:y + curr_sel_img.shape[0]:, x:x + curr_sel_img.shape[1]] = curr_sel_img
+                target[y:y + curr_sel_img.shape[0]:, x:x +
+                       curr_sel_img.shape[1]] = curr_sel_img
                 x += curr_sel_img.shape[1]
 
             # put image of line into result
@@ -128,13 +132,15 @@ class Preprocessor:
             # map image into target image
             M = np.float32([[fx, 0, tx], [0, fy, ty]])
             target = np.ones(self.img_size[::-1]) * 255
-            img = cv2.warpAffine(img, M, dsize=self.img_size, dst=target, borderMode=cv2.BORDER_TRANSPARENT)
+            img = cv2.warpAffine(img, M, dsize=self.img_size,
+                                 dst=target, borderMode=cv2.BORDER_TRANSPARENT)
 
             # photometric data augmentation
             if random.random() < 0.5:
                 img = img * (0.25 + random.random() * 0.75)
             if random.random() < 0.25:
-                img = np.clip(img + (np.random.random(img.shape) - 0.5) * random.randint(1, 25), 0, 255)
+                img = np.clip(img + (np.random.random(img.shape) - 0.5)
+                              * random.randint(1, 25), 0, 255)
             if random.random() < 0.1:
                 img = 255 - img
 
@@ -158,7 +164,8 @@ class Preprocessor:
             # map image into target image
             M = np.float32([[f, 0, tx], [0, f, ty]])
             target = np.ones([ht, wt]) * 255
-            img = cv2.warpAffine(img, M, dsize=(wt, ht), dst=target, borderMode=cv2.BORDER_TRANSPARENT)
+            img = cv2.warpAffine(img, M, dsize=(
+                wt, ht), dst=target, borderMode=cv2.BORDER_TRANSPARENT)
 
         # transpose for TF
         img = cv2.transpose(img)
@@ -173,7 +180,8 @@ class Preprocessor:
 
         res_imgs = [self.process_img(img) for img in batch.imgs]
         max_text_len = res_imgs[0].shape[0] // 4
-        res_gt_texts = [self._truncate_label(gt_text, max_text_len) for gt_text in batch.gt_texts]
+        res_gt_texts = [self._truncate_label(
+            gt_text, max_text_len) for gt_text in batch.gt_texts]
         return Batch(res_imgs, res_gt_texts, batch.batch_size)
 
 

@@ -7,6 +7,7 @@ import numpy
 
 app = Flask(__name__)
 
+
 def recognize_text(pil_image):
 
     open_cv_image = numpy.array(pil_image)
@@ -18,16 +19,19 @@ def recognize_text(pil_image):
 
     # 这是一个伪函数，模拟文本识别。你需要用实际的文本识别逻辑替换它。
     # 比如，使用 Tesseract 或其他 OCR 库。
-    
+
     return data
+
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
+
 @app.route('/samples/<filename>')
 def get_sample(filename):
     return send_from_directory('samples', filename)
+
 
 @app.route('/upload', methods=['POST'])
 def upload_image():
@@ -40,6 +44,7 @@ def upload_image():
         image = Image.open(io.BytesIO(file.read())).convert("L")
         result = recognize_text(image)
         return jsonify({'msg': "Recognized text from the image", 'data': result})
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8000)

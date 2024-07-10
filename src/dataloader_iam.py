@@ -38,7 +38,8 @@ class DataLoaderIAM:
 
         f = open(data_dir / 'gt/words.txt')
         chars = set()
-        bad_samples_reference = ['a01-117-05-02', 'r06-022-03-05']  # known broken images in IAM dataset
+        # known broken images in IAM dataset
+        bad_samples_reference = ['a01-117-05-02', 'r06-022-03-05']
         for line in f:
             # ignore empty and comment lines
             line = line.strip()
@@ -53,7 +54,8 @@ class DataLoaderIAM:
             file_name_subdir1 = file_name_split[0]
             file_name_subdir2 = f'{file_name_split[0]}-{file_name_split[1]}'
             file_base_name = line_split[0] + '.png'
-            file_name = data_dir / 'img' / file_name_subdir1 / file_name_subdir2 / file_base_name
+            file_name = data_dir / 'img' / file_name_subdir1 / \
+                file_name_subdir2 / file_base_name
 
             if line_split[0] in bad_samples_reference:
                 print('Ignoring known broken image:', file_name)
@@ -99,18 +101,22 @@ class DataLoaderIAM:
     def get_iterator_info(self) -> Tuple[int, int]:
         """Current batch index and overall number of batches."""
         if self.curr_set == 'train':
-            num_batches = int(np.floor(len(self.samples) / self.batch_size))  # train set: only full-sized batches
+            # train set: only full-sized batches
+            num_batches = int(np.floor(len(self.samples) / self.batch_size))
         else:
-            num_batches = int(np.ceil(len(self.samples) / self.batch_size))  # val set: allow last batch to be smaller
+            # val set: allow last batch to be smaller
+            num_batches = int(np.ceil(len(self.samples) / self.batch_size))
         curr_batch = self.curr_idx // self.batch_size + 1
         return curr_batch, num_batches
 
     def has_next(self) -> bool:
         """Is there a next element?"""
         if self.curr_set == 'train':
-            return self.curr_idx + self.batch_size <= len(self.samples)  # train set: only full-sized batches
+            # train set: only full-sized batches
+            return self.curr_idx + self.batch_size <= len(self.samples)
         else:
-            return self.curr_idx < len(self.samples)  # val set: allow last batch to be smaller
+            # val set: allow last batch to be smaller
+            return self.curr_idx < len(self.samples)
 
     def _get_img(self, i: int) -> np.ndarray:
         if self.fast:
@@ -125,7 +131,8 @@ class DataLoaderIAM:
 
     def get_next(self) -> Batch:
         """Get next element."""
-        batch_range = range(self.curr_idx, min(self.curr_idx + self.batch_size, len(self.samples)))
+        batch_range = range(self.curr_idx, min(
+            self.curr_idx + self.batch_size, len(self.samples)))
 
         imgs = [self._get_img(i) for i in batch_range]
         gt_texts = [self.samples[i].gt_text for i in batch_range]

@@ -37,7 +37,8 @@ class Model:
         self.is_train = tf.compat.v1.placeholder(tf.bool, name='is_train')
 
         # input image batch
-        self.input_imgs = tf.compat.v1.placeholder(tf.float32, shape=(None, None, None))
+        self.input_imgs = tf.compat.v1.placeholder(
+            tf.float32, shape=(None, None, None))
 
         # setup CNN, RNN and CTC
         self.setup_cnn()
@@ -46,7 +47,8 @@ class Model:
 
         # setup optimizer to train NN
         self.batches_trained = 0
-        self.update_ops = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS)
+        self.update_ops = tf.compat.v1.get_collection(
+            tf.compat.v1.GraphKeys.UPDATE_OPS)
         with tf.control_dependencies(self.update_ops):
             self.optimizer = tf.compat.v1.train.AdamOptimizer().minimize(self.loss)
 
@@ -69,8 +71,10 @@ class Model:
             kernel = tf.Variable(
                 tf.random.truncated_normal([kernel_vals[i], kernel_vals[i], feature_vals[i], feature_vals[i + 1]],
                                            stddev=0.1))
-            conv = tf.nn.conv2d(input=pool, filters=kernel, padding='SAME', strides=(1, 1, 1, 1))
-            conv_norm = tf.compat.v1.layers.batch_normalization(conv, training=self.is_train)
+            conv = tf.nn.conv2d(input=pool, filters=kernel,
+                                padding='SAME', strides=(1, 1, 1, 1))
+            conv_norm = tf.compat.v1.layers.batch_normalization(
+                conv, training=self.is_train)
             relu = tf.nn.relu(conv_norm)
             pool = tf.nn.max_pool2d(input=relu, ksize=(1, pool_vals[i][0], pool_vals[i][1], 1),
                                     strides=(1, stride_vals[i][0], stride_vals[i][1], 1), padding='VALID')
@@ -87,7 +91,8 @@ class Model:
                  range(2)]  # 2 layers
 
         # stack basic cells
-        stacked = tf.compat.v1.nn.rnn_cell.MultiRNNCell(cells, state_is_tuple=True)
+        stacked = tf.compat.v1.nn.rnn_cell.MultiRNNCell(
+            cells, state_is_tuple=True)
 
         # bidirectional RNN
         # BxTxF -> BxTx2H
@@ -98,7 +103,8 @@ class Model:
         concat = tf.expand_dims(tf.concat([fw, bw], 2), 2)
 
         # project output to chars (including blank): BxTx1x2H -> BxTx1xC -> BxTxC
-        kernel = tf.Variable(tf.random.truncated_normal([1, 1, num_hidden * 2, len(self.char_list) + 1], stddev=0.1))
+        kernel = tf.Variable(tf.random.truncated_normal(
+            [1, 1, num_hidden * 2, len(self.char_list) + 1], stddev=0.1))
         self.rnn_out_3d = tf.squeeze(tf.nn.atrous_conv2d(value=concat, filters=kernel, rate=1, padding='SAME'),
                                      axis=[2])
 
@@ -108,7 +114,8 @@ class Model:
         self.ctc_in_3d_tbc = tf.transpose(a=self.rnn_out_3d, perm=[1, 0, 2])
         # ground truth text as sparse tensor
         self.gt_texts = tf.SparseTensor(tf.compat.v1.placeholder(tf.int64, shape=[None, 2]),
-                                        tf.compat.v1.placeholder(tf.int32, [None]),
+                                        tf.compat.v1.placeholder(
+                                            tf.int32, [None]),
                                         tf.compat.v1.placeholder(tf.int64, [2]))
 
         # calc loss for batch
@@ -126,7 +133,8 @@ class Model:
 
         # best path decoding or beam search decoding
         if self.decoder_type == DecoderType.BestPath:
-            self.decoder = tf.nn.ctc_greedy_decoder(inputs=self.ctc_in_3d_tbc, sequence_length=self.seq_len)
+            self.decoder = tf.nn.ctc_greedy_decoder(
+                inputs=self.ctc_in_3d_tbc, sequence_length=self.seq_len)
         elif self.decoder_type == DecoderType.BeamSearch:
             self.decoder = tf.nn.ctc_beam_search_decoder(inputs=self.ctc_in_3d_tbc, sequence_length=self.seq_len,
                                                          beam_width=50)
@@ -134,7 +142,8 @@ class Model:
         elif self.decoder_type == DecoderType.WordBeamSearch:
             # prepare information about language (dictionary, characters in dataset, characters forming words)
             chars = ''.join(self.char_list)
-            word_chars = open('../model/wordCharList.txt').read().splitlines()[0]
+            word_chars = open(
+                '../model/wordCharList.txt').read().splitlines()[0]
             corpus = open('../data/corpus.txt').read()
 
             # decode using the "Words" mode of word beam search
@@ -152,9 +161,11 @@ class Model:
 
         sess = tf.compat.v1.Session()  # TF session
 
-        saver = tf.compat.v1.train.Saver(max_to_keep=1)  # saver saves model to file
+        saver = tf.compat.v1.train.Saver(
+            max_to_keep=1)  # saver saves model to file
         model_dir = '../model/'
-        latest_snapshot = tf.train.latest_checkpoint(model_dir)  # is there a saved model?
+        latest_snapshot = tf.train.latest_checkpoint(
+            model_dir)  # is there a saved model?
 
         # if model must be restored (for inference), there must be a snapshot
         if self.must_restore and not latest_snapshot:
@@ -238,7 +249,8 @@ class Model:
         for b in range(max_b):
             csv = ''
             for t in range(max_t):
-                csv += ';'.join([str(rnn_output[t, b, c]) for c in range(max_c)]) + ';\n'
+                csv += ';'.join([str(rnn_output[t, b, c])
+                                for c in range(max_c)]) + ';\n'
             fn = dump_dir + 'rnnOutput_' + str(b) + '.csv'
             print('Write dump of NN to file: ' + fn)
             with open(fn, 'w') as f:
@@ -284,7 +296,8 @@ class Model:
         # feed RNN output and recognized text into CTC loss to compute labeling probability
         probs = None
         if calc_probability:
-            sparse = self.to_sparse(batch.gt_texts) if probability_of_gt else self.to_sparse(texts)
+            sparse = self.to_sparse(
+                batch.gt_texts) if probability_of_gt else self.to_sparse(texts)
             ctc_input = eval_res[1]
             eval_list = self.loss_per_element
             feed_dict = {self.saved_ctc_input: ctc_input, self.gt_texts: sparse,
@@ -301,4 +314,5 @@ class Model:
     def save(self) -> None:
         """Save model to file."""
         self.snap_ID += 1
-        self.saver.save(self.sess, '../model/snapshot', global_step=self.snap_ID)
+        self.saver.save(self.sess, '../model/snapshot',
+                        global_step=self.snap_ID)
