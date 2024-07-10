@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Text Recognition</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        input[type="file"] {
+            margin: 20px 0;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            min-height: 50px;
+        }
+        #imagePreview {
+            margin-top: 20px;
+            max-width: 100%;
+            height: auto;
+        }
+        .samples {
+            margin-top: 20px;
+        }
+        .sample-img {
+            margin: 5px;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .sample-img:hover {
+            border: 2px solid #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Text Recognition</h1>
+        <input type="file" id="fileInput" onchange="previewImage()">
+        <button onclick="uploadFile()">Upload</button>
+        <div id="result"></div>
+        <img id="imagePreview" src="#" alt="Image Preview" style="display:none;">
+        <div class="samples">
+            <h3>Sample Images</h3>
+            <img src="/samples/sample1.png" class="sample-img" onclick="loadSample('sample1.png')" width="100">
+            <img src="/samples/sample2.png" class="sample-img" onclick="loadSample('sample2.png')" width="100">
+            <img src="/samples/sample3.png" class="sample-img" onclick="loadSample('sample3.png')" width="100">
+        </div>
+    </div>
+    <script>
+        function previewImage() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const imagePreview = document.getElementById('imagePreview');
+                imagePreview.src = e.target.result;
+                imagePreview.style.display = 'block';
+            };
+
+            reader.readAsDataURL(file);
+        }
+
+        function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('result');
+                if (data.error) {
+                    resultDiv.innerHTML = 'Error: ' + data.error;
+                } else {
+                    resultDiv.innerHTML = `
+                        <p><strong>Recognized Text:</strong> ${data.data.Recognized}</p>
+                        <p><strong>Probability:</strong> ${(data.data.Probability * 100).toFixed(2)}%</p>
+                        <p><em>${data.msg}</em></p>
+                    `;
+                }
+            })
+            .catch(error => {
+                const resultDiv = document.getElementById('result');
+                resultDiv.textContent = 'Error: ' + error.message;
+            });
+        }
+
+        function loadSample(filename) {
+            const sampleImage = new Image();
+            sampleImage.src = `/samples/${filename}`;
+            sampleImage.onload = function() {
+                const imagePreview = document.getElementById('imagePreview');
+                imagePreview.src = sampleImage.src;
+                imagePreview.style.display = 'block';
+                fetch(`/samples/${filename}`)
+                .then(response => response.blob())
+                .then(blob => {
+                    const file = new File([blob], filename, { type: blob.type });
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    document.getElementById('fileInput').files = dataTransfer.files;
+                });
+            };
+        }
+    </script>
+</body>
+</html>
