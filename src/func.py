@@ -18,7 +18,7 @@ class FilePaths:
     fn_char_list = '../model/charList.txt'
     fn_summary = '../model/summary.json'
     fn_corpus = '../data/corpus.txt'
-    log_dir = '../logs'  # Directory for TensorBoard logs
+    log_dir = '../logs'
 
 
 tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=FilePaths.log_dir, histogram_freq=1)
