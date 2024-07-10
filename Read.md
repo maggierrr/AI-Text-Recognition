@@ -1,7 +1,3 @@
-以下是一个简洁的项目 README 模板：
-
----
-
 # Handwritten Text Recognition (HTR) using TensorFlow
 
 This repository contains the code for a Handwritten Text Recognition (HTR) system using TensorFlow. It includes training, validation, and inference processes with performance monitoring in production.
