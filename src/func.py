@@ -220,8 +220,7 @@ def main():
     # parse arguments and set CTC decoder
     args = parse_args()
     decoder_mapping = {'bestpath': DecoderType.BestPath,
-                       'beamsearch': DecoderType.BeamSearch,
-                       'wordbeamsearch': DecoderType.WordBeamSearch}
+                       'beamsearch': DecoderType.BeamSearch, 'wordbeamsearch': DecoderType.WordBeamSearch}
     decoder_type = decoder_mapping[args.decoder]
 
     # train the model
