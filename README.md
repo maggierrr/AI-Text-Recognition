@@ -1,6 +1,45 @@
-# Handwritten Text Recognition (HTR) using TensorFlow
+# AI Text Recognition
 
-This repository contains the code for a Handwritten Text Recognition (HTR) system using TensorFlow. It includes training, validation, and inference processes with performance monitoring in production.
+This repository contains the code for a Handwritten Text Recognition (HTR) system using TensorFlow. The system includes training, validation, and inference processes, along with performance monitoring.
+
+## Table of Contents
+
+- [Project Overview](#project-overview)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Project Structure](#project-structure)
+- [Model Training](#model-training)
+- [Inference](#inference)
+- [Evaluation](#evaluation)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Project Overview
+
+The AI Text Recognition system is designed to recognize handwritten text from images. It leverages deep learning models and provides tools for training, validating, and performing inference on text images. The project follows best practices for code version control, modularity, and documentation.
+
+## Installation
+
+### Prerequisites
+
+- Python 3.8 or higher
+- TensorFlow
+- OpenCV
+- NumPy
+- Flask
+
+### Clone the Repository
+
+```bash
+git clone https://github.com/maggierrr/AI-Text-Recognition.git
+cd AI-Text-Recognition
+```
+
+### Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
 
 ## Project Structure
 
@@ -12,29 +51,119 @@ This repository contains the code for a Handwritten Text Recognition (HTR) syste
 ## Setup and Installation
 
 1. **Clone the repository:**
+
    ```bash
    git clone https://github.com/yourusername/htr-tensorflow.git
    cd htr-tensorflow
    ```
 
 2. **Create and activate a virtual environment:**
+
    ```bash
    python3 -m venv venv
    source venv/bin/activate
    ```
 
 3. **Install the required packages:**
+
    ```bash
    pip install -r requirements.txt
    ```
+
+## Usage
+
+### Training
+
+To train the model, you need to prepare your dataset and specify the training parameters.
+
+```bash
+python src/train.py --data_dir data/raw --output_dir model/checkpoints
+```
+
+### Inference
+
+To perform inference on an image:
+
+```bash
+python src/infer.py --model_dir model/checkpoints --image_path data/raw/test/image.png
+```
+
+### Running the Web App
+
+You can also run a Flask web application to use the model via a web interface.
+
+```bash
+export FLASK_APP=src/app.py
+flask run
+```
+
+## Project Structure
+
+```
+AI-Text-Recognition/
+├── data/
+│   ├── raw/
+│   ├── processed/
+│   └── ... # Data preparation scripts and files
+├── model/
+│   ├── __init__.py
+│   ├── model.py
+│   └── ... # Model definition and utilities
+├── src/
+│   ├── app.py
+│   ├── train.py
+│   ├── infer.py
+│   ├── data_loader.py
+│   ├── preprocessor.py
+│   └── ... # Source code for training, inference, and preprocessing
+├── .github/ # GitHub workflows and actions
+├── .gitignore
+├── LICENSE.md
+├── README.md
+├── requirements.txt
+└── ... # Additional files and scripts
+```
 
 ## Model Definition
 
 The model is defined in `model.py` and includes CNN, RNN, and CTC components for text recognition. It uses TensorFlow v1 compatibility mode with eager execution disabled.
 
-## Training Process
 
-The training process is implemented in the `train` function in `func.py`. The function trains the model on the provided dataset, performs validation, and saves the best model based on character error rate (CER).
+
+
+
+## Model Training
+
+### Data Preparation
+
+Place your training and validation data in the `data/raw` directory. The data should be organized as follows:
+
+```
+data/
+└── raw/
+    ├── train/
+    │   ├── image1.png
+    │   ├── image2.png
+    │   └── ...
+    └── val/
+        ├── image1.png
+        ├── image2.png
+        └── ...
+```
+
+### Training Command
+
+```bash
+python src/train.py --data_dir data/raw --output_dir model/checkpoints
+```
+
+### Training Parameters
+
+You can customize training parameters using command-line arguments:
+
+- `--epochs`: Number of training epochs.
+- `--batch_size`: Size of each training batch.
+- `--learning_rate`: Learning rate for the optimizer.
 
 ### Training Pipeline
 
@@ -46,102 +175,34 @@ The training process is implemented in the `train` function in `func.py`. The fu
    - Save the model if it improves.
    - Stop if early stopping criteria are met.
 
-## Inference Process
+## Inference
 
-The inference process is implemented in the `infer_batch` method of the `Model` class. It feeds a batch of data into the neural network and recognizes the texts. Performance metrics are logged for monitoring in production.
+To perform inference, use the provided `infer.py` script. You need to specify the path to the saved model and the image file.
 
-### Inference Code with Monitoring
+### Inference Command
 
-```python
-import time
-import tensorflow as tf
-
-def infer_batch(self, batch: Batch, calc_probability: bool = False, probability_of_gt: bool = False):
-    """Feed a batch into the NN to recognize the texts."""
-    
-    start_time = time.time()
-
-    # decode, optionally save RNN output
-    num_batch_elements = len(batch.imgs)
-
-    # put tensors to be evaluated into list
-    eval_list = []
-
-    if self.decoder_type == DecoderType.WordBeamSearch:
-        eval_list.append(self.wbs_input)
-    else:
-        eval_list.append(self.decoder)
-
-    if self.dump or calc_probability:
-        eval_list.append(self.ctc_in_3d_tbc)
-
-    # sequence length depends on input image size (model downsizes width by 4)
-    max_text_len = batch.imgs[0].shape[0] // 4
-
-    # dict containing all tensor fed into the model
-    feed_dict = {self.input_imgs: batch.imgs, self.seq_len: [max_text_len] * num_batch_elements, self.is_train: False}
-
-    # evaluate model
-    eval_res = self.sess.run(eval_list, feed_dict)
-
-    # TF decoders: decoding already done in TF graph
-    if self.decoder_type != DecoderType.WordBeamSearch:
-        decoded = eval_res[0]
-    # word beam search decoder: decoding is done in C++ function compute()
-    else:
-        decoded = self.decoder.compute(eval_res[0])
-
-    # map labels (numbers) to character string
-    texts = self.decoder_output_to_text(decoded, num_batch_elements)
-
-    # feed RNN output and recognized text into CTC loss to compute labeling probability
-    probs = None
-    if calc_probability:
-        sparse = self.to_sparse(batch.gt_texts) if probability_of_gt else self.to_sparse(texts)
-        ctc_input = eval_res[1]
-        eval_list = self.loss_per_element
-        feed_dict = {self.saved_ctc_input: ctc_input, self.gt_texts: sparse, self.seq_len: [max_text_len] * num_batch_elements, self.is_train: False}
-        loss_vals = self.sess.run(eval_list, feed_dict)
-        
-        probs = np.exp(-loss_vals)
-        
-        # Log inference loss to TensorBoard
-        loss_summary = tf.compat.v1.Summary(value=[tf.compat.v1.Summary.Value(tag='Loss/Inference', simple_value=float(loss_vals.mean()))])
-        self.summary_writer.add_summary(loss_summary, self.batches_trained)
-
-    # dump the output of the NN to CSV file(s)
-    if self.dump:
-        self.dump_nn_output(eval_res[1])
-
-    # Log inference time to TensorBoard
-    inference_time = time.time() - start_time
-    time_summary = tf.compat.v1.Summary(value=[tf.compat.v1.Summary.Value(tag='Time/Inference', simple_value=float(inference_time))])
-    self.summary_writer.add_summary(time_summary, self.batches_trained)
-    
-    # If ground truth labels are available, calculate CER and Word Accuracy
-    if probability_of_gt and calc_probability:
-        char_error_rate, word_accuracy = self.calculate_metrics(batch.gt_texts, texts)
-        cer_summary = tf.compat.v1.Summary(value=[tf.compat.v1.Summary.Value(tag='CER/Inference', simple_value=float(char_error_rate))])
-        acc_summary = tf.compat.v1.Summary(value=[tf.compat.v1.Summary.Value(tag='WordAccuracy/Inference', simple_value=float(word_accuracy))])
-        self.summary_writer.add_summary(cer_summary, self.batches_trained)
-        self.summary_writer.add_summary(acc_summary, self.batches_trained)
-
-    self.summary_writer.flush()
-
-    return texts, probs
-
-def calculate_metrics(self, ground_truth_texts, predicted_texts):
-    """Calculate Character Error Rate and Word Accuracy."""
-    # Implement your CER and Word Accuracy calculation here
-    char_error_rate = ...  # Calculate CER
-    word_accuracy = ...  # Calculate Word Accuracy
-    return char_error_rate, word_accuracy
+```bash
+python src/infer.py --model_dir model/checkpoints --image_path data/raw/test/image.png
 ```
+
+## Evaluation
+
+The evaluation scripts allow you to measure the performance of your model using metrics such as Character Error Rate (CER) and Word Accuracy.
+
+### Evaluation Command
+
+```bash
+python src/evaluate.py --model_dir model/checkpoints --data_dir data/raw/val
+```
+
+## Contributing
+
+Contributions are welcome! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to this project.
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
 
 ---
 
-Feel free to customize the content to better fit your project's specifics and requirements.
+This README provides detailed instructions and explanations, covering all important aspects of the project. Feel free to adjust the specifics based on the actual content and structure of your project.
