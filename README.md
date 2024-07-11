@@ -179,6 +179,14 @@ You can customize training parameters using command-line arguments:
 
 To perform inference, use the provided `infer.py` script. You need to specify the path to the saved model and the image file.
 
+## Run Demo
+use following command to run demo.
+```
+python server.py
+```
+
+![demo](data/demo.png)
+
 ### Inference Command
 
 ```bash
